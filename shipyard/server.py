@@ -113,7 +113,7 @@ def _board_html() -> str:
     :root { color-scheme: light; font-family: "Comic Sans MS", "Bradley Hand", "Segoe Print", ui-rounded, system-ui, sans-serif; --ink: #0645a8; --line: #d8e4f2; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; background: #eef6fd; color: #17202a; display: block; overflow-y: auto; }
-    .shell { position: relative; width: min(100vw - 18px, 1719px); min-height: min(calc((100vw - 18px) * 0.532), 915px); margin: 10px auto 32px; background: url("/static/shipyard-board-base.png") top center / 100% auto no-repeat, linear-gradient(180deg, transparent 0 915px, #fff 915px); border-radius: 10px; box-shadow: 0 16px 38px rgba(26, 68, 111, .16); overflow: visible; }
+    .shell { position: relative; width: min(100vw - 18px, 1719px); min-height: min(calc((100vw - 18px) * 0.532), 915px); margin: 10px auto 32px; background-color: #fff; background-image: url("/static/shipyard-board-base.png"); background-position: top center; background-size: 100% auto; background-repeat: no-repeat; border-radius: 10px; box-shadow: 0 16px 38px rgba(26, 68, 111, .16); overflow: visible; }
     .overlay-controls { position: absolute; z-index: 8; top: 4.05%; right: 2.55%; display: flex; align-items: center; gap: clamp(8px, 1.4vw, 20px); font-family: Inter, system-ui, sans-serif; pointer-events: auto; }
     .overlay-btn { height: clamp(40px, 4.15vw, 55px); min-width: clamp(92px, 8.8vw, 150px); border: 1.5px solid #c9dbef; border-radius: 8px; background: rgba(255,255,255,.92); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: clamp(13px, 1.05vw, 18px); font-weight: 800; box-shadow: 0 8px 18px rgba(22, 77, 143, .08); cursor: pointer; }
     .overlay-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(22, 77, 143, .14); }
@@ -127,20 +127,20 @@ def _board_html() -> str:
     .tool { height: 42px; border: 1px solid #c6d6e7; border-radius: 7px; background: #fff; color: var(--ink); padding: 0 14px; font-weight: 700; }
     .primary { background: var(--ink); color: #fff; border-color: var(--ink); }
     a { color: var(--ink); text-decoration: none; font-family: Inter, system-ui, sans-serif; font-weight: 700; }
-    main { position: relative; left: auto; right: auto; top: auto; bottom: auto; display: grid; grid-template-columns: repeat(6, 1fr); column-gap: 1.18%; pointer-events: none; width: 96.9%; margin: 0 auto; padding-top: 29.5%; padding-bottom: 5.5%; min-height: min(calc((100vw - 18px) * 0.365), 626px); }
+    main { position: relative; left: auto; right: auto; top: auto; bottom: auto; display: grid; grid-template-columns: repeat(6, 1fr); column-gap: 1.18%; pointer-events: none; width: 96.9%; margin: 0 auto; padding-top: 20.8%; padding-bottom: 5.5%; min-height: min(calc((100vw - 18px) * 0.365), 626px); }
     .column { min-width: 0; padding: 0 0.65% 24px; background: transparent; border: 0; }
     .column h2 { display: none; }
     .icon { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); }
     .icon svg { width: 42px; height: 42px; stroke: currentColor; fill: none; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
     .underline { border-bottom: 2px solid var(--ink); padding-bottom: 3px; }
     .cards { display: flex; flex-direction: column; gap: clamp(8px, 1.2vw, 15px); align-items: stretch; pointer-events: auto; }
-    .card { position: relative; min-height: clamp(92px, 8.9vw, 145px); border: 0; border-radius: 2px; background: #ffe99d; color: #17202a; padding: clamp(8px, .9vw, 14px); box-shadow: 0 12px 14px rgba(52, 65, 82, .20); transform: rotate(var(--tilt, -1deg)); transition: transform .45s ease, box-shadow .35s ease; cursor: pointer; will-change: transform; }
+    .card { position: relative; min-height: clamp(92px, 8.9vw, 145px); border: 0; border-radius: 2px; background: #ffe99d; color: #17202a; padding: clamp(8px, .9vw, 14px); box-shadow: 0 12px 14px rgba(52, 65, 82, .20); transform: rotate(var(--tilt, -1deg)); transition: transform .65s cubic-bezier(.18,.78,.22,1), box-shadow .45s ease; cursor: pointer; will-change: transform; }
     .card::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 28%); pointer-events: none; }
     .card:nth-child(2n) { --tilt: 1.2deg; background: #d7edff; }
     .card:nth-child(3n) { --tilt: -.7deg; background: #ffd3d6; }
     .card:nth-child(4n) { --tilt: .6deg; background: #e5f4a7; }
     .card:nth-child(5n) { --tilt: -1.4deg; background: #eadbf5; }
-    .card:hover { transform: translateY(-4px) rotate(0deg); box-shadow: 0 18px 26px rgba(52, 65, 82, .25); }
+    .card:hover { transform: translateY(-11px) scale(1.025) rotate(.2deg); box-shadow: 0 22px 34px rgba(52, 65, 82, .26); }
     .card.fresh { animation: sticky-enter 1.1s cubic-bezier(.18,.78,.22,1) both; }
     .card.moved, .card.travelling { z-index: 4; animation: sticky-move 1.8s cubic-bezier(.18,.78,.22,1); }
     @keyframes sticky-enter {
@@ -198,7 +198,7 @@ def _board_html() -> str:
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     footer { display: none; }
-    @media (max-width: 900px) { .shell { width: 1200px; max-width: none; min-height: 640px; } body { overflow: auto; } main { min-height: 438px; } .detail-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .shell { width: 1200px; max-width: none; min-height: 640px; } body { overflow: auto; } main { min-height: 438px; padding-top: 250px; } .detail-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
