@@ -121,10 +121,10 @@ def _board_html() -> str:
     .overlay-btn.primary { background: #075ed8; color: #fff; border-color: #075ed8; }
     header { min-height: 112px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 190px 18px 32px; border-bottom: 2px solid #dce8f5; background: linear-gradient(180deg, #fff 0%, #fbfdff 100%); }
     .brand { display: flex; align-items: center; gap: 15px; color: var(--ink); }
-    .logo { width: 90px; height: 48px; }
+    .brand-mark { width: 84px; height: 46px; position: relative; border-bottom: 3px solid var(--ink); }
+    .brand-mark::before { content: ""; position: absolute; left: 12px; bottom: 3px; width: 42px; height: 30px; border: 3px solid var(--ink); border-bottom: 0; transform: skewY(-18deg); }
+    .brand-mark::after { content: ""; position: absolute; right: 4px; bottom: 3px; width: 26px; height: 17px; border: 3px solid var(--ink); border-top: 0; border-radius: 0 0 12px 12px; }
     h1 { font-family: var(--hand); font-size: 44px; margin: 0; font-weight: 900; letter-spacing: 2px; color: var(--ink); text-transform: uppercase; }
-    .tools { display: flex; align-items: center; gap: 10px; font-family: Inter, system-ui, sans-serif; }
-    input { height: 42px; width: min(260px, 28vw); border: 1px solid #c6d6e7; border-radius: 7px; padding: 0 13px; color: #17304e; background: #fff; }
     .tool { height: 42px; border: 1px solid #c6d6e7; border-radius: 7px; background: #fff; color: var(--ink); padding: 0 14px; font-weight: 700; }
     .primary { background: var(--ink); color: #fff; border-color: var(--ink); }
     a { color: var(--ink); text-decoration: none; font-family: Inter, system-ui, sans-serif; font-weight: 700; }
@@ -132,8 +132,7 @@ def _board_html() -> str:
     .column { min-width: 0; padding: 24px 20px 34px; background: linear-gradient(180deg, #fff 0%, #fff 68%, #f9fcff 100%); border-left: 2px solid #dce8f5; }
     .column:first-child { border-left: 0; }
     .column h2 { min-height: 70px; display: flex; align-items: center; gap: 14px; margin: 0 0 12px; color: var(--ink); font-family: var(--hand); font-size: clamp(24px, 2vw, 38px); line-height: 1.05; font-weight: 900; letter-spacing: .5px; text-transform: uppercase; }
-    .icon { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); }
-    .icon svg { width: 42px; height: 42px; stroke: currentColor; fill: none; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
+    .column h2::before { content: ""; width: 22px; height: 28px; border: 3px solid var(--ink); border-radius: 2px; box-shadow: inset 0 7px 0 rgba(6,69,168,.12); flex: 0 0 auto; }
     .underline { border-bottom: 2px solid var(--ink); padding-bottom: 3px; }
     .cards { display: flex; flex-direction: column; gap: clamp(12px, 1.4vw, 22px); align-items: stretch; pointer-events: auto; }
     .card { position: relative; min-height: clamp(92px, 8.9vw, 145px); border: 0; border-radius: 2px; background: #ffe99d; color: #17202a; padding: clamp(8px, .9vw, 14px); box-shadow: 0 12px 14px rgba(52, 65, 82, .20); transform: rotate(var(--tilt, -1deg)); transition: transform .65s cubic-bezier(.18,.78,.22,1), box-shadow .45s ease; cursor: pointer; will-change: transform; font-family: var(--hand); }
@@ -199,7 +198,6 @@ def _board_html() -> str:
       0% { opacity: 0; transform: translateY(12px) scale(.94); }
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
-    .add-task { margin-top: 12px; min-height: 54px; border: 2px dashed #bcd0e8; border-radius: 8px; color: var(--ink); background: rgba(255,255,255,.72); display: flex; align-items: center; justify-content: center; font-size: clamp(14px, 1.1vw, 20px); font-weight: 900; }
     footer { display: none; }
     @media (max-width: 1100px) { .shell { width: 1200px; max-width: none; } body { overflow: auto; } .detail-grid { grid-template-columns: 1fr; } }
   </style>
@@ -211,16 +209,8 @@ def _board_html() -> str:
     </div>
     <header>
       <div class="brand">
-        <svg class="logo" viewBox="0 0 120 62" aria-hidden="true">
-          <path d="M8 51h104M16 49V17h42v32M18 18L42 5l18 13M28 49V29h20v20M58 49l18-22 21 22M74 28h20M84 20v29M92 49h15l5-10H99" fill="none" stroke="#0645a8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M73 16h16M80 10c8-5 12-2 15 2M70 42c8 3 19 3 29 0" fill="none" stroke="#0645a8" stroke-width="2" stroke-linecap="round"/>
-        </svg>
+        <span class="brand-mark" aria-hidden="true"></span>
         <h1>Shipyard</h1>
-      </div>
-      <div class="tools">
-        <input id="search" placeholder="Search tasks..." aria-label="Search tasks">
-        <button class="tool" type="button">⌁ Filter</button>
-        <button class="tool primary" type="button">+ Add Task</button>
       </div>
     </header>
     <main id="board"></main>
@@ -234,14 +224,6 @@ def _board_html() -> str:
     const columns = ["todo", "in_progress", "review", "testing", "ready_to_ship", "done"];
     const labels = {todo:"To Do", in_progress:"In Progress", review:"Review", testing:"Testing", ready_to_ship:"Ready To Ship", done:"Done"};
     const statusOrder = {todo:0, in_progress:1, review:2, testing:3, ready_to_ship:4, done:5};
-    const icons = {
-      todo:`<svg viewBox="0 0 48 48"><path d="M15 8h18v5h5v28H10V13h5z"/><path d="M17 20h14M17 27h14M17 34h10M17 8v6h14V8"/></svg>`,
-      in_progress:`<svg viewBox="0 0 48 48"><path d="M7 39h34M14 38V13h19v25M15 14l11-7 8 7M20 38V22h9v16M31 38l7-11 5 11"/></svg>`,
-      review:`<svg viewBox="0 0 48 48"><circle cx="21" cy="21" r="11"/><path d="M30 30l10 10"/></svg>`,
-      testing:`<svg viewBox="0 0 48 48"><path d="M15 8h18v5h5v28H10V13h5z"/><path d="M17 20h14M17 27h14M17 34h10M17 8v6h14V8"/></svg>`,
-      ready_to_ship:`<svg viewBox="0 0 48 48"><path d="M8 32h32l-5 8H15zM15 32V18h18v14M20 18v-6M27 18v-8M10 40c5 2 10 2 15 0 5 2 10 2 15 0"/></svg>`,
-      done:`<svg viewBox="0 0 48 48"><path d="M12 13h25v25H12z"/><path d="M18 25l5 5 12-14"/></svg>`
-    };
     let previous = JSON.parse(localStorage.getItem("shipyard-statuses") || "{}");
     let latestTickets = [];
     async function load() {
@@ -249,10 +231,9 @@ def _board_html() -> str:
       const res = await fetch("/api/tickets");
       const data = await res.json();
       latestTickets = data.tickets;
-      const term = document.getElementById("search").value.trim().toLowerCase();
       const byStatus = Object.fromEntries(columns.map(c => [c, []]));
       const next = {};
-      for (const ticket of data.tickets.filter(t => !term || `${t.id} ${t.title} ${t.description}`.toLowerCase().includes(term))) {
+      for (const ticket of data.tickets) {
         const status = mapStatus(ticket.status || "todo");
         const key = `${ticket.request_id}:${ticket.id}`;
         ticket.moved = previous[key] && previous[key] !== status;
@@ -262,8 +243,8 @@ def _board_html() -> str:
         byStatus[status].push(ticket);
       }
       document.getElementById("board").innerHTML = columns.map(status => `
-        <section class="column"><h2><span class="icon">${icons[status]}</span><span class="underline">${labels[status]}</span></h2>
-          <div class="cards">${(byStatus[status] || []).map(card).join("")}<div class="add-task">+ Add task</div></div>
+        <section class="column"><h2><span class="underline">${labels[status]}</span></h2>
+          <div class="cards">${(byStatus[status] || []).map(card).join("")}</div>
         </section>`).join("");
       animateCardTransfers(oldRects);
       previous = next;
@@ -363,7 +344,6 @@ def _board_html() -> str:
         .slice(-6)
         .join(" ");
     }
-    document.getElementById("search").addEventListener("input", load);
     load(); setInterval(load, 2000);
   </script>
 </body>
