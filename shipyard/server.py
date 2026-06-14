@@ -8,7 +8,6 @@ from typing import Any
 from flask import Flask, jsonify, Response
 
 from shipyard.config import Settings, load_settings
-from shipyard.demo_seed import seed_demo
 
 
 def create_app(settings: Settings | None = None) -> Flask:
@@ -22,11 +21,6 @@ def create_app(settings: Settings | None = None) -> Flask:
     @app.get("/api/tickets")
     def api_tickets() -> Any:
         return jsonify({"tickets": collect_tickets(settings.inbox_dir)})
-
-    @app.route("/api/demo/seed", methods=["GET", "POST"])
-    def api_seed_demo() -> Any:
-        request_dir = seed_demo(settings)
-        return jsonify({"ok": True, "request_dir": str(request_dir)})
 
     @app.get("/evals-dashboard")
     def evals_dashboard() -> Response:
@@ -72,8 +66,8 @@ def collect_tickets(inbox_dir: Path) -> list[dict[str, Any]]:
 
 
 def evals_summary(evals_path: Path) -> dict[str, Any]:
-    counts: Counter[str] = Counter()
-    recent = []
+    latest_by_ticket: dict[str, dict[str, Any]] = {}
+    recent: list[dict[str, Any]] = []
     if evals_path.exists():
         for line in evals_path.read_text(encoding="utf-8").splitlines():
             try:
@@ -81,9 +75,24 @@ def evals_summary(evals_path: Path) -> dict[str, Any]:
             except json.JSONDecodeError:
                 continue
             if payload.get("event") == "agent_result":
-                counts[str(payload.get("status", "unknown"))] += 1
+                key = str(payload.get("worktree_path") or payload.get("ticket_id") or len(recent))
+                latest_by_ticket[key] = payload
                 recent.append(payload)
-    return {"counts": dict(counts), "recent": recent[-25:]}
+    latest = list(latest_by_ticket.values())
+    counts: Counter[str] = Counter(str(item.get("status", "unknown")) for item in latest)
+    total = sum(counts.values())
+    done = counts.get("done", 0)
+    failed = counts.get("failed", 0)
+    success_rate = round((done / total) * 100) if total else 0
+    return {
+        "counts": dict(counts),
+        "done": done,
+        "failed": failed,
+        "total": total,
+        "success_rate": success_rate,
+        "recent": recent[-12:],
+        "latest": latest[-12:],
+    }
 
 
 def _tail(path: Path, max_chars: int = 1800) -> str:
@@ -166,10 +175,7 @@ def _board_html() -> str:
 <body>
   <div class="shell">
     <div class="overlay-controls" aria-label="Shipyard board controls">
-      <a class="overlay-btn" href="/evals-dashboard">Evaluation</a>
-      <button class="overlay-btn" type="button" onclick="seedDemo()">Seed Demo</button>
-      <button class="overlay-btn" type="button" onclick="load()">Refresh</button>
-      <button class="overlay-btn primary" type="button" onclick="toggleNotes()">Notes</button>
+      <a class="overlay-btn primary" href="/evals-dashboard">Evaluation</a>
     </div>
     <header>
       <div class="brand">
@@ -205,7 +211,6 @@ def _board_html() -> str:
     };
     let previous = JSON.parse(localStorage.getItem("shipyard-statuses") || "{}");
     let latestTickets = [];
-    let notesVisible = true;
     async function load() {
       const res = await fetch("/api/tickets");
       const data = await res.json();
@@ -223,18 +228,10 @@ def _board_html() -> str:
       }
       document.getElementById("board").innerHTML = columns.map(status => `
         <section class="column"><h2><span class="icon">${icons[status]}</span><span class="underline">${labels[status]}</span></h2>
-          <div class="cards">${notesVisible ? (byStatus[status] || []).map(card).join("") : ""}</div>
+          <div class="cards">${(byStatus[status] || []).map(card).join("")}</div>
         </section>`).join("");
       previous = next;
       localStorage.setItem("shipyard-statuses", JSON.stringify(next));
-    }
-    async function seedDemo() {
-      await fetch("/api/demo/seed", { method: "POST" });
-      await load();
-    }
-    function toggleNotes() {
-      notesVisible = !notesVisible;
-      load();
     }
     function esc(value) { return String(value || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
     function mapStatus(status) {
@@ -298,29 +295,129 @@ def _evals_html() -> str:
   <title>Shipyard Evals</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
-    body { margin: 0; background: #080c10; color: #e8edf2; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
-    header { height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; border-bottom: 1px solid #1e2933; background: #0d131a; }
-    a { color: #7cc7ff; text-decoration: none; }
-    main { max-width: 900px; margin: 0 auto; padding: 22px; }
-    .panel { border: 1px solid #1d2a35; border-radius: 8px; background: #101820; padding: 16px; }
+    :root { color-scheme: dark; --bg:#070a0f; --panel:#101821; --panel2:#0c121a; --line:#203041; --text:#eef5ff; --muted:#93a4b7; --blue:#66b7ff; --green:#65d69a; --red:#ff6370; --gold:#ffd166; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: radial-gradient(circle at 18% 0%, rgba(42,117,204,.22), transparent 28%), linear-gradient(180deg, #0b1118 0%, var(--bg) 42%); color: var(--text); font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    header { height: 72px; display: flex; align-items: center; justify-content: space-between; padding: 0 26px; border-bottom: 1px solid var(--line); background: rgba(8, 13, 19, .82); backdrop-filter: blur(16px); position: sticky; top: 0; z-index: 3; }
+    a { color: var(--blue); text-decoration: none; font-weight: 800; }
+    .brand { display: flex; flex-direction: column; gap: 4px; }
+    .brand strong { font-size: 20px; letter-spacing: .2px; }
+    .brand span { color: var(--muted); font-size: 12px; }
+    main { max-width: 1180px; margin: 0 auto; padding: 28px 22px 40px; }
+    .hero { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; align-items: stretch; }
+    .panel { border: 1px solid var(--line); border-radius: 8px; background: linear-gradient(180deg, rgba(16,24,33,.96), rgba(10,16,23,.96)); box-shadow: 0 18px 44px rgba(0,0,0,.28); padding: 18px; }
+    .score { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 18px; }
+    .metric { border: 1px solid #1f3347; border-radius: 8px; background: rgba(9,16,24,.8); padding: 14px; min-height: 98px; }
+    .metric span { display:block; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+    .metric strong { display:block; margin-top: 8px; font-size: 34px; line-height: 1; }
+    .metric small { display:block; color: var(--muted); margin-top: 8px; }
+    .metric.good strong { color: var(--green); }
+    .metric.bad strong { color: var(--red); }
+    .metric.gold strong { color: var(--gold); }
+    h1, h2 { margin: 0; }
+    h1 { font-size: clamp(30px, 4vw, 56px); line-height: .96; max-width: 720px; }
+    .sub { color: #b9c8d8; line-height: 1.55; max-width: 760px; margin: 14px 0 0; }
+    .status-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+    .badge { display: inline-flex; align-items: center; gap: 8px; border: 1px solid #23425f; border-radius: 999px; padding: 8px 11px; color: #cfe6ff; background: rgba(18,35,53,.72); font-size: 13px; font-weight: 800; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--green); box-shadow: 0 0 18px rgba(101,214,154,.72); }
+    .charts { display: grid; grid-template-columns: .7fr 1.3fr; gap: 18px; margin-top: 18px; }
+    .chart-wrap { min-height: 280px; }
+    .chart-wrap h2, .table-panel h2 { font-size: 16px; margin-bottom: 14px; color: #dceaff; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { text-align: left; padding: 11px 8px; border-bottom: 1px solid #1b2a39; color: #cad7e5; }
+    th { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+    .state { display: inline-flex; align-items: center; border-radius: 999px; padding: 5px 9px; font-weight: 900; font-size: 12px; background: rgba(101,214,154,.12); color: var(--green); }
+    .state.failed { background: rgba(255,99,112,.12); color: var(--red); }
+    .empty { color: var(--muted); padding: 24px 0; }
+    @media (max-width: 900px) { .hero, .charts { grid-template-columns: 1fr; } .score { grid-template-columns: repeat(2, 1fr); } }
   </style>
 </head>
 <body>
-  <header><strong>Shipyard Evals</strong><a href="/">Board</a></header>
-  <main><section class="panel"><canvas id="chart" height="120"></canvas></section></main>
+  <header>
+    <div class="brand"><strong>Shipyard Evals</strong><span>Agent performance and delivery health</span></div>
+    <a href="/">Back to Board</a>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="panel">
+        <h1 id="headline">Shipyard is ready for demo.</h1>
+        <p class="sub">This dashboard tracks the latest outcome for each agent ticket, so a successful retry replaces the earlier failed attempt instead of making stale failures look current.</p>
+        <div class="status-row">
+          <span class="badge"><span class="dot"></span> Telegram bot live</span>
+          <span class="badge">Parallel ticket sandboxes</span>
+          <span class="badge">Reviewer and security logs</span>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="score">
+          <div class="metric good"><span>Success Rate</span><strong id="success">0%</strong><small>latest ticket state</small></div>
+          <div class="metric good"><span>Done</span><strong id="done">0</strong><small>ready to show</small></div>
+          <div class="metric bad"><span>Failed</span><strong id="failed">0</strong><small>needs attention</small></div>
+          <div class="metric gold"><span>Total</span><strong id="total">0</strong><small>tracked tickets</small></div>
+        </div>
+      </div>
+    </section>
+    <section class="charts">
+      <div class="panel chart-wrap">
+        <h2>Latest Outcome</h2>
+        <canvas id="donut"></canvas>
+      </div>
+      <div class="panel chart-wrap">
+        <h2>Agent Results</h2>
+        <canvas id="bars"></canvas>
+      </div>
+    </section>
+    <section class="panel table-panel" style="margin-top:18px">
+      <h2>Recent Agent Runs</h2>
+      <table>
+        <thead><tr><th>Ticket</th><th>Status</th><th>Tester</th><th>Note</th></tr></thead>
+        <tbody id="runs"></tbody>
+      </table>
+    </section>
+  </main>
   <script>
+    let donutChart;
+    let barChart;
     async function load() {
       const res = await fetch("/api/evals");
       const data = await res.json();
-      const labels = Object.keys(data.counts);
+      const labels = ["done", "failed", "unknown"].filter(key => data.counts[key]);
       const values = labels.map(k => data.counts[k]);
-      new Chart(document.getElementById("chart"), {
-        type: "bar",
-        data: { labels, datasets: [{ label: "Agent Results", data: values, backgroundColor: ["#6bd49b", "#e86d75", "#7cc7ff"] }] },
-        options: { plugins: { legend: { labels: { color: "#e8edf2" } } }, scales: { x: { ticks: { color: "#b7c5d0" } }, y: { ticks: { color: "#b7c5d0" } } } }
+      document.getElementById("success").textContent = `${data.success_rate || 0}%`;
+      document.getElementById("done").textContent = data.done || 0;
+      document.getElementById("failed").textContent = data.failed || 0;
+      document.getElementById("total").textContent = data.total || 0;
+      document.getElementById("headline").textContent = (data.failed || 0) === 0 && (data.total || 0) > 0
+        ? "All current tickets are passing."
+        : "Shipyard is tracking agent health.";
+
+      const palette = labels.map(label => label === "done" ? "#65d69a" : label === "failed" ? "#ff6370" : "#66b7ff");
+      donutChart?.destroy();
+      donutChart = new Chart(document.getElementById("donut"), {
+        type: "doughnut",
+        data: { labels, datasets: [{ data: values, backgroundColor: palette, borderWidth: 0 }] },
+        options: { cutout: "70%", plugins: { legend: { position: "bottom", labels: { color: "#cfe0ef", boxWidth: 12 } } } }
       });
+
+      barChart?.destroy();
+      barChart = new Chart(document.getElementById("bars"), {
+        type: "bar",
+        data: { labels, datasets: [{ label: "Latest Ticket State", data: values, backgroundColor: palette, borderRadius: 5 }] },
+        options: {
+          plugins: { legend: { labels: { color: "#e8edf2" } } },
+          scales: {
+            x: { grid: { color: "#142230" }, ticks: { color: "#b7c5d0" } },
+            y: { beginAtZero: true, grid: { color: "#142230" }, ticks: { color: "#b7c5d0", precision: 0 } }
+          }
+        }
+      });
+      document.getElementById("runs").innerHTML = (data.recent || []).slice().reverse().map(run => {
+        const status = run.status || "unknown";
+        const note = String(run.error || "Completed").replace(/[<>&]/g, m => ({'<':'&lt;','>':'&gt;','&':'&amp;'}[m]));
+        return `<tr><td>${run.ticket_id || "-"}</td><td><span class="state ${status === "failed" ? "failed" : ""}">${status}</span></td><td>${run.pytest_returncode ?? "none"}</td><td>${note}</td></tr>`;
+      }).join("") || `<tr><td colspan="4" class="empty">No evals logged yet.</td></tr>`;
     }
-    load();
+    load(); setInterval(load, 4000);
   </script>
 </body>
 </html>"""
