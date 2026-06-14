@@ -14,6 +14,16 @@ Shipyard demonstrates:
 
 No dashboard login is required.
 
+## Build Directions
+
+Shipyard is designed to fit every hackathon direction:
+
+- **Agentic Coding:** Shipyard turns a Telegram request into a structured plan, implementation tickets, isolated git worktrees, Codex agent runs, tests, review, security checks, retry, and merge flow.
+- **UX for Agentic Applications:** Telegram becomes the lightweight command center while the live Kanban board makes agent work visible as sticky notes moving through the delivery pipeline.
+- **Multimodal Intelligence:** Users can describe a project with text, voice/audio, photo/sketch, or combinations. Shipyard transcribes audio, describes sketches, and merges all input into one project plan.
+- **Domain Agents:** Coder, tester, reviewer, and security agents operate inside real software constraints: git sandboxes, file diffs, test commands, review notes, security warnings, and user approvals.
+- **Building Evals:** Agent outcomes are logged to JSONL and summarized in an eval dashboard with success rate, ticket status, and recent run details.
+
 ## Setup
 
 ```bash
@@ -61,7 +71,7 @@ python -m shipyard.server
 Open:
 
 ```text
-http://127.0.0.1:5050
+http://shipyard.localhost:5050
 ```
 
 In another terminal, start the Telegram bot:
@@ -83,7 +93,7 @@ Then:
 
 1. Wait for the project plan.
 2. Tap `Approve & Start`.
-3. Watch the board at `http://127.0.0.1:5050`.
+3. Watch the board at `http://shipyard.localhost:5050`.
 4. Done cards have a `View` button with simple-English details.
 
 ## Commands
@@ -115,7 +125,7 @@ Telegram text/voice/photo
 2. Send the demo prompt above from your phone.
 3. Show the bot generating a plan.
 4. Tap `Approve & Start`.
-5. Switch to the browser at `http://127.0.0.1:5050`.
+5. Switch to the browser at `http://shipyard.localhost:5050`.
 6. Say: "Each sticky note is a ticket. Every ticket gets its own sandbox under `/tmp/shipyard`, so agents can work in parallel without stepping on each other."
 7. Show a Done card and click `View`.
 8. Say: "This is simple English output for the user, while the deeper agent logs live in `THOUGHTS.md`."
