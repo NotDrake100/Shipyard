@@ -8,6 +8,7 @@ from typing import Any
 from flask import Flask, jsonify, Response
 
 from shipyard.config import Settings, load_settings
+from shipyard.demo_seed import seed_demo
 
 
 def create_app(settings: Settings | None = None) -> Flask:
@@ -21,6 +22,11 @@ def create_app(settings: Settings | None = None) -> Flask:
     @app.get("/api/tickets")
     def api_tickets() -> Any:
         return jsonify({"tickets": collect_tickets(settings.inbox_dir)})
+
+    @app.route("/api/demo/seed", methods=["GET", "POST"])
+    def api_seed_demo() -> Any:
+        request_dir = seed_demo(settings)
+        return jsonify({"ok": True, "request_dir": str(request_dir)})
 
     @app.get("/evals-dashboard")
     def evals_dashboard() -> Response:
@@ -40,10 +46,6 @@ def run_server(settings: Settings) -> None:
 
 def main() -> None:
     run_server(load_settings())
-
-
-if __name__ == "__main__":
-    main()
 
 
 def collect_tickets(inbox_dir: Path) -> list[dict[str, Any]]:
@@ -102,7 +104,11 @@ def _board_html() -> str:
     :root { color-scheme: light; font-family: "Comic Sans MS", "Bradley Hand", "Segoe Print", ui-rounded, system-ui, sans-serif; --ink: #0645a8; --line: #d8e4f2; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; background: #eef6fd; color: #17202a; display: grid; place-items: start center; }
-    .shell { position: relative; width: min(100vw - 18px, 1717px); aspect-ratio: 1717 / 916; margin: 10px auto; background: url("/static/shipyard-board-base.png") center / 100% 100% no-repeat; border-radius: 10px; box-shadow: 0 16px 38px rgba(26, 68, 111, .16); overflow: hidden; }
+    .shell { position: relative; width: min(100vw - 18px, 1719px); aspect-ratio: 1719 / 915; margin: 10px auto; background: url("/static/shipyard-board-base.png") center / 100% 100% no-repeat; border-radius: 10px; box-shadow: 0 16px 38px rgba(26, 68, 111, .16); overflow: hidden; }
+    .overlay-controls { position: absolute; z-index: 8; top: 4.05%; right: 2.55%; display: flex; align-items: center; gap: clamp(8px, 1.4vw, 20px); font-family: Inter, system-ui, sans-serif; pointer-events: auto; }
+    .overlay-btn { height: clamp(40px, 4.15vw, 55px); min-width: clamp(92px, 8.8vw, 150px); border: 1.5px solid #c9dbef; border-radius: 8px; background: rgba(255,255,255,.92); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: clamp(13px, 1.05vw, 18px); font-weight: 800; box-shadow: 0 8px 18px rgba(22, 77, 143, .08); cursor: pointer; }
+    .overlay-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(22, 77, 143, .14); }
+    .overlay-btn.primary { background: #075ed8; color: #fff; border-color: #075ed8; }
     header { display: none; }
     .brand { display: flex; align-items: center; gap: 15px; color: var(--ink); }
     .logo { width: 90px; height: 48px; }
@@ -159,6 +165,12 @@ def _board_html() -> str:
 </head>
 <body>
   <div class="shell">
+    <div class="overlay-controls" aria-label="Shipyard board controls">
+      <a class="overlay-btn" href="/evals-dashboard">Evaluation</a>
+      <button class="overlay-btn" type="button" onclick="seedDemo()">Seed Demo</button>
+      <button class="overlay-btn" type="button" onclick="load()">Refresh</button>
+      <button class="overlay-btn primary" type="button" onclick="toggleNotes()">Notes</button>
+    </div>
     <header>
       <div class="brand">
         <svg class="logo" viewBox="0 0 120 62" aria-hidden="true">
@@ -193,6 +205,7 @@ def _board_html() -> str:
     };
     let previous = JSON.parse(localStorage.getItem("shipyard-statuses") || "{}");
     let latestTickets = [];
+    let notesVisible = true;
     async function load() {
       const res = await fetch("/api/tickets");
       const data = await res.json();
@@ -210,10 +223,18 @@ def _board_html() -> str:
       }
       document.getElementById("board").innerHTML = columns.map(status => `
         <section class="column"><h2><span class="icon">${icons[status]}</span><span class="underline">${labels[status]}</span></h2>
-          <div class="cards">${(byStatus[status] || []).map(card).join("")}</div>
+          <div class="cards">${notesVisible ? (byStatus[status] || []).map(card).join("") : ""}</div>
         </section>`).join("");
       previous = next;
       localStorage.setItem("shipyard-statuses", JSON.stringify(next));
+    }
+    async function seedDemo() {
+      await fetch("/api/demo/seed", { method: "POST" });
+      await load();
+    }
+    function toggleNotes() {
+      notesVisible = !notesVisible;
+      load();
     }
     function esc(value) { return String(value || "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
     function mapStatus(status) {
@@ -303,3 +324,7 @@ def _evals_html() -> str:
   </script>
 </body>
 </html>"""
+
+
+if __name__ == "__main__":
+    main()
