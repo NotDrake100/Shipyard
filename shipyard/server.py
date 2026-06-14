@@ -110,32 +110,31 @@ def _board_html() -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Shipyard Board</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800;900&family=Patrick+Hand&display=swap');
-    :root { color-scheme: light; font-family: "Inter", ui-sans-serif, system-ui, sans-serif; --hand: "Patrick Hand", "Comic Sans MS", "Bradley Hand", "Segoe Print", cursive; --ink: #0645a8; --line: #d8e4f2; }
+    :root { color-scheme: light; font-family: "Comic Sans MS", "Bradley Hand", "Segoe Print", ui-rounded, system-ui, sans-serif; --ink: #0645a8; --line: #d8e4f2; }
     * { box-sizing: border-box; }
     body { margin: 0; min-height: 100vh; background: #eef6fd; color: #17202a; display: block; overflow-y: auto; }
-    .shell { position: relative; width: min(100vw - 18px, 1719px); min-height: calc(100vh - 24px); margin: 10px auto 32px; background: #fff; border: 1px solid #dce8f5; border-radius: 10px; box-shadow: 0 16px 38px rgba(26, 68, 111, .16); overflow: hidden; }
-    .overlay-controls { position: absolute; z-index: 8; top: 26px; right: 24px; display: flex; align-items: center; gap: clamp(8px, 1.4vw, 20px); font-family: Inter, system-ui, sans-serif; pointer-events: auto; }
-    .overlay-btn { height: 55px; min-width: 132px; border: 1.5px solid #c9dbef; border-radius: 8px; background: rgba(255,255,255,.92); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 15px; font-weight: 900; box-shadow: 0 8px 18px rgba(22, 77, 143, .08); cursor: pointer; }
+    .shell { position: relative; width: min(100vw - 18px, 1719px); min-height: min(calc((100vw - 18px) * 0.532), 915px); margin: 10px auto 32px; background-color: #fff; background-image: url("/static/shipyard-board-base.png"); background-position: top center; background-size: 100% auto; background-repeat: no-repeat; border-radius: 10px; box-shadow: 0 16px 38px rgba(26, 68, 111, .16); overflow: visible; }
+    .overlay-controls { position: absolute; z-index: 8; top: 2.65%; right: 2.55%; display: flex; align-items: center; gap: clamp(8px, 1.4vw, 20px); font-family: Inter, system-ui, sans-serif; pointer-events: auto; }
+    .overlay-btn { height: clamp(40px, 4.15vw, 55px); min-width: clamp(92px, 8.8vw, 150px); border: 1.5px solid #c9dbef; border-radius: 8px; background: rgba(255,255,255,.92); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: clamp(13px, 1.05vw, 18px); font-weight: 800; box-shadow: 0 8px 18px rgba(22, 77, 143, .08); cursor: pointer; }
     .overlay-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 22px rgba(22, 77, 143, .14); }
     .overlay-btn.primary { background: #075ed8; color: #fff; border-color: #075ed8; }
-    header { min-height: 112px; display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 18px 190px 18px 32px; border-bottom: 2px solid #dce8f5; background: linear-gradient(180deg, #fff 0%, #fbfdff 100%); }
+    header { display: none; }
     .brand { display: flex; align-items: center; gap: 15px; color: var(--ink); }
-    .brand-mark { width: 84px; height: 46px; position: relative; border-bottom: 3px solid var(--ink); }
-    .brand-mark::before { content: ""; position: absolute; left: 12px; bottom: 3px; width: 42px; height: 30px; border: 3px solid var(--ink); border-bottom: 0; transform: skewY(-18deg); }
-    .brand-mark::after { content: ""; position: absolute; right: 4px; bottom: 3px; width: 26px; height: 17px; border: 3px solid var(--ink); border-top: 0; border-radius: 0 0 12px 12px; }
-    h1 { font-family: var(--hand); font-size: 44px; margin: 0; font-weight: 900; letter-spacing: 2px; color: var(--ink); text-transform: uppercase; }
+    .logo { width: 90px; height: 48px; }
+    h1 { font-size: 34px; margin: 0; font-weight: 900; letter-spacing: 3px; color: var(--ink); text-transform: uppercase; }
+    .tools { display: flex; align-items: center; gap: 10px; font-family: Inter, system-ui, sans-serif; }
+    input { height: 42px; width: min(260px, 28vw); border: 1px solid #c6d6e7; border-radius: 7px; padding: 0 13px; color: #17304e; background: #fff; }
     .tool { height: 42px; border: 1px solid #c6d6e7; border-radius: 7px; background: #fff; color: var(--ink); padding: 0 14px; font-weight: 700; }
     .primary { background: var(--ink); color: #fff; border-color: var(--ink); }
     a { color: var(--ink); text-decoration: none; font-family: Inter, system-ui, sans-serif; font-weight: 700; }
-    main { position: relative; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); pointer-events: none; width: 100%; margin: 0; padding: 0; min-height: calc(100vh - 148px); }
-    .column { min-width: 0; padding: 24px 20px 34px; background: linear-gradient(180deg, #fff 0%, #fff 68%, #f9fcff 100%); border-left: 2px solid #dce8f5; }
-    .column:first-child { border-left: 0; }
-    .column h2 { min-height: 70px; display: flex; align-items: center; gap: 14px; margin: 0 0 12px; color: var(--ink); font-family: var(--hand); font-size: clamp(24px, 2vw, 38px); line-height: 1.05; font-weight: 900; letter-spacing: .5px; text-transform: uppercase; }
-    .column h2::before { content: ""; width: 22px; height: 28px; border: 3px solid var(--ink); border-radius: 2px; box-shadow: inset 0 7px 0 rgba(6,69,168,.12); flex: 0 0 auto; }
+    main { position: relative; left: auto; right: auto; top: auto; bottom: auto; display: grid; grid-template-columns: repeat(6, 1fr); column-gap: 1.18%; pointer-events: none; width: 96.9%; margin: 0 auto; padding-top: 20.8%; padding-bottom: 5.5%; min-height: min(calc((100vw - 18px) * 0.365), 626px); }
+    .column { min-width: 0; padding: 0 0.65% 24px; background: transparent; border: 0; }
+    .column h2 { display: none; }
+    .icon { width: 42px; height: 42px; display: inline-flex; align-items: center; justify-content: center; color: var(--ink); }
+    .icon svg { width: 42px; height: 42px; stroke: currentColor; fill: none; stroke-width: 2.3; stroke-linecap: round; stroke-linejoin: round; }
     .underline { border-bottom: 2px solid var(--ink); padding-bottom: 3px; }
-    .cards { display: flex; flex-direction: column; gap: clamp(12px, 1.4vw, 22px); align-items: stretch; pointer-events: auto; }
-    .card { position: relative; min-height: clamp(92px, 8.9vw, 145px); border: 0; border-radius: 2px; background: #ffe99d; color: #17202a; padding: clamp(8px, .9vw, 14px); box-shadow: 0 12px 14px rgba(52, 65, 82, .20); transform: rotate(var(--tilt, -1deg)); transition: transform .65s cubic-bezier(.18,.78,.22,1), box-shadow .45s ease; cursor: pointer; will-change: transform; font-family: var(--hand); }
+    .cards { display: flex; flex-direction: column; gap: clamp(8px, 1.2vw, 15px); align-items: stretch; pointer-events: auto; }
+    .card { position: relative; min-height: clamp(92px, 8.9vw, 145px); border: 0; border-radius: 2px; background: #ffe99d; color: #17202a; padding: clamp(8px, .9vw, 14px); box-shadow: 0 12px 14px rgba(52, 65, 82, .20); transform: rotate(var(--tilt, -1deg)); transition: transform .65s cubic-bezier(.18,.78,.22,1), box-shadow .45s ease; cursor: pointer; will-change: transform; }
     .card::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(255,255,255,.35), rgba(255,255,255,0) 28%); pointer-events: none; }
     .card:nth-child(2n) { --tilt: 1.2deg; background: #d7edff; }
     .card:nth-child(3n) { --tilt: -.7deg; background: #ffd3d6; }
@@ -159,9 +158,9 @@ def _board_html() -> str:
       78% { transform: translateX(-1px) translateY(1px) rotate(-1deg) scale(1); }
       100% { transform: translateX(0) translateY(0) rotate(var(--tilt, -1deg)) scale(1); }
     }
-    .id { color: #314456; font-size: clamp(9px, .72vw, 12px); font-weight: 900; font-family: "Inter", system-ui, sans-serif; }
-    .title { margin: 6px 0 8px; font-weight: 900; line-height: 1.05; font-size: clamp(16px, 1.18vw, 21px); border-bottom: 2px solid rgba(23,32,42,.55); padding-bottom: 4px; }
-    .desc { color: #1f2933; font-family: "Inter", system-ui, sans-serif; font-size: clamp(10px, .78vw, 14px); line-height: 1.28; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .id { color: #314456; font-size: clamp(9px, .72vw, 12px); font-weight: 900; font-family: Inter, system-ui, sans-serif; }
+    .title { margin: 6px 0 8px; font-weight: 900; line-height: 1.16; font-size: clamp(12px, 1vw, 17px); border-bottom: 2px solid rgba(23,32,42,.55); padding-bottom: 4px; }
+    .desc { color: #1f2933; font-size: clamp(10px, .78vw, 14px); line-height: 1.28; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
     .meta { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: clamp(9px, .7vw, 12px); font-family: Inter, system-ui, sans-serif; }
     .pill { background: rgba(15,74,162,.13); color: #173f84; border-radius: 5px; padding: 4px 7px; font-weight: 800; }
     .view { border: 1px solid rgba(15,74,162,.3); background: #fff; color: var(--ink); border-radius: 6px; padding: 4px 8px; font-weight: 900; cursor: pointer; }
@@ -199,7 +198,7 @@ def _board_html() -> str:
       100% { opacity: 1; transform: translateY(0) scale(1); }
     }
     footer { display: none; }
-    @media (max-width: 1100px) { .shell { width: 1200px; max-width: none; } body { overflow: auto; } .detail-grid { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .shell { width: 1200px; max-width: none; min-height: 640px; } body { overflow: auto; } main { min-height: 438px; padding-top: 250px; } .detail-grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
@@ -209,7 +208,10 @@ def _board_html() -> str:
     </div>
     <header>
       <div class="brand">
-        <span class="brand-mark" aria-hidden="true"></span>
+        <svg class="logo" viewBox="0 0 120 62" aria-hidden="true">
+          <path d="M8 51h104M16 49V17h42v32M18 18L42 5l18 13M28 49V29h20v20M58 49l18-22 21 22M74 28h20M84 20v29M92 49h15l5-10H99" fill="none" stroke="#0645a8" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M73 16h16M80 10c8-5 12-2 15 2M70 42c8 3 19 3 29 0" fill="none" stroke="#0645a8" stroke-width="2" stroke-linecap="round"/>
+        </svg>
         <h1>Shipyard</h1>
       </div>
     </header>
@@ -224,6 +226,14 @@ def _board_html() -> str:
     const columns = ["todo", "in_progress", "review", "testing", "ready_to_ship", "done"];
     const labels = {todo:"To Do", in_progress:"In Progress", review:"Review", testing:"Testing", ready_to_ship:"Ready To Ship", done:"Done"};
     const statusOrder = {todo:0, in_progress:1, review:2, testing:3, ready_to_ship:4, done:5};
+    const icons = {
+      todo:`<svg viewBox="0 0 48 48"><path d="M15 8h18v5h5v28H10V13h5z"/><path d="M17 20h14M17 27h14M17 34h10M17 8v6h14V8"/></svg>`,
+      in_progress:`<svg viewBox="0 0 48 48"><path d="M7 39h34M14 38V13h19v25M15 14l11-7 8 7M20 38V22h9v16M31 38l7-11 5 11"/></svg>`,
+      review:`<svg viewBox="0 0 48 48"><circle cx="21" cy="21" r="11"/><path d="M30 30l10 10"/></svg>`,
+      testing:`<svg viewBox="0 0 48 48"><path d="M15 8h18v5h5v28H10V13h5z"/><path d="M17 20h14M17 27h14M17 34h10M17 8v6h14V8"/></svg>`,
+      ready_to_ship:`<svg viewBox="0 0 48 48"><path d="M8 32h32l-5 8H15zM15 32V18h18v14M20 18v-6M27 18v-8M10 40c5 2 10 2 15 0 5 2 10 2 15 0"/></svg>`,
+      done:`<svg viewBox="0 0 48 48"><path d="M12 13h25v25H12z"/><path d="M18 25l5 5 12-14"/></svg>`
+    };
     let previous = JSON.parse(localStorage.getItem("shipyard-statuses") || "{}");
     let latestTickets = [];
     async function load() {
@@ -243,7 +253,7 @@ def _board_html() -> str:
         byStatus[status].push(ticket);
       }
       document.getElementById("board").innerHTML = columns.map(status => `
-        <section class="column"><h2><span class="underline">${labels[status]}</span></h2>
+        <section class="column"><h2><span class="icon">${icons[status]}</span><span class="underline">${labels[status]}</span></h2>
           <div class="cards">${(byStatus[status] || []).map(card).join("")}</div>
         </section>`).join("");
       animateCardTransfers(oldRects);
