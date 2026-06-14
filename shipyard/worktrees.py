@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import shutil
 import subprocess
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
@@ -32,23 +33,41 @@ class WorktreeManager:
         project_slug = _slug(plan.project_name or plan.request_id)
         request_root = self._worktree_root / f"{chat_id}-{_slug(plan.request_id)}"
         request_root.mkdir(parents=True, exist_ok=True)
+        project_repo = request_root / f"{project_slug}-repo"
+        self._ensure_project_repo(project_repo, plan)
 
-        if self._is_git_repo():
-            records = [
-                self._create_git_worktree(request_root, project_slug, plan, ticket)
-                for ticket in plan.tickets
-            ]
-        else:
-            records = [
-                self._create_plain_worktree(request_root, project_slug, plan, ticket)
-                for ticket in plan.tickets
-            ]
+        records = [
+            self._create_project_worktree(project_repo, request_root, project_slug, plan, ticket)
+            for ticket in plan.tickets
+        ]
 
         self._write_json(request_root / "worktrees.json", [asdict(record) for record in records])
         return records
 
-    def _create_git_worktree(
+    def _ensure_project_repo(self, project_repo: Path, plan: ProjectPlan) -> None:
+        project_repo.mkdir(parents=True, exist_ok=True)
+        if (project_repo / ".git").exists():
+            return
+
+        _git(["init", "-b", "main"], project_repo, check=False)
+        if not (project_repo / ".git").exists():
+            _git(["init"], project_repo)
+            _git(["checkout", "-B", "main"], project_repo)
+
+        _git(["config", "user.name", "Shipyard Bot"], project_repo)
+        _git(["config", "user.email", "shipyard@example.local"], project_repo)
+
+        (project_repo / "README.md").write_text(_project_readme(plan), encoding="utf-8")
+        (project_repo / ".gitignore").write_text(
+            ".env\nnode_modules/\n.venv/\n__pycache__/\n.pytest_cache/\ndist/\nbuild/\n",
+            encoding="utf-8",
+        )
+        _git(["add", "."], project_repo)
+        _git(["commit", "-m", "Initial project repo"], project_repo)
+
+    def _create_project_worktree(
         self,
+        project_repo: Path,
         request_root: Path,
         project_slug: str,
         plan: ProjectPlan,
@@ -57,32 +76,10 @@ class WorktreeManager:
         branch = f"shipyard/{project_slug}/{_slug(plan.request_id)}/{_slug(ticket.id)}"
         path = request_root / _slug(ticket.id)
 
+        if path.exists() and not (path / ".git").exists():
+            shutil.rmtree(path)
         if not path.exists():
-            subprocess.run(
-                ["git", "worktree", "add", "-B", branch, str(path), "HEAD"],
-                cwd=self._repo_root,
-                check=True,
-                capture_output=True,
-                text=True,
-            )
-
-        task_path = path / "TASK.md"
-        task_path.write_text(_task_markdown(plan, ticket), encoding="utf-8")
-        return _record(ticket, branch, path, task_path)
-
-    def _create_plain_worktree(
-        self,
-        request_root: Path,
-        project_slug: str,
-        plan: ProjectPlan,
-        ticket: Ticket,
-    ) -> TicketWorktree:
-        branch = f"shipyard/{project_slug}/{_slug(plan.request_id)}/{_slug(ticket.id)}"
-        path = request_root / _slug(ticket.id)
-        path.mkdir(parents=True, exist_ok=True)
-
-        if ticket.id == plan.tickets[0].id and not (path / ".git").exists():
-            subprocess.run(["git", "init"], cwd=path, check=True, capture_output=True, text=True)
+            _git(["worktree", "add", "-B", branch, str(path), "main"], project_repo)
 
         task_path = path / "TASK.md"
         task_path.write_text(_task_markdown(plan, ticket), encoding="utf-8")
@@ -164,6 +161,31 @@ def _task_markdown(plan: ProjectPlan, ticket: Ticket) -> str:
 - Add or update tests when practical.
 - Write progress notes to `THOUGHTS.md`.
 """
+
+
+def _project_readme(plan: ProjectPlan) -> str:
+    stack = ", ".join(plan.tech_stack) if plan.tech_stack else "To be decided by Shipyard agents"
+    tickets = "\n".join(f"- {ticket.id}: {ticket.title}" for ticket in plan.tickets)
+    return f"""# {plan.project_name}
+
+{plan.summary}
+
+## Stack
+{stack}
+
+## Shipyard Tickets
+{tickets}
+"""
+
+
+def _git(args: list[str], cwd: Path, check: bool = True) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        ["git", *args],
+        cwd=cwd,
+        check=check,
+        capture_output=True,
+        text=True,
+    )
 
 
 def _slug(value: str) -> str:

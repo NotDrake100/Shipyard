@@ -669,7 +669,7 @@ def build_application(settings: Settings | None = None) -> Application:
         planner=PlanningService(settings),
         plans=PlanStore(settings.inbox_dir),
         worktrees=WorktreeManager(Path.cwd(), settings.worktree_root),
-        agents=AgentRunner(settings.storage_dir / "evals.jsonl"),
+        agents=AgentRunner(settings.storage_dir / "evals.jsonl", max_workers=4, codex_timeout_seconds=4),
         pending_photos=PendingPhotoStore(settings.state_dir),
     )
 
