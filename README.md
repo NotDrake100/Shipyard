@@ -119,19 +119,6 @@ Telegram text/voice/photo
   -> live Flask Kanban board
 ```
 
-## Demo Video Script
-
-1. Show Telegram with `ShipyardBot`.
-2. Send the demo prompt above from your phone.
-3. Show the bot generating a plan.
-4. Tap `Approve & Start`.
-5. Switch to the browser at `http://shipyard.localhost:5050`.
-6. Say: "Each sticky note is a ticket. Every ticket gets its own sandbox under `/tmp/shipyard`, so agents can work in parallel without stepping on each other."
-7. Show a Done card and click `View`.
-8. Say: "This is simple English output for the user, while the deeper agent logs live in `THOUGHTS.md`."
-9. Mention the broken-components project: dark/light icon bug, theme toggle bug, card animation bug, and broken buttons.
-10. End with: "Shipyard turns a Telegram idea into a multi-agent implementation pipeline."
-
 ## Security
 
 - `.env` is ignored.
