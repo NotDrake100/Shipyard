@@ -1,6 +1,6 @@
 # ⚓ Shipyard
 
-**Speak. Ship. Done.**
+** Don't Just Build it - Ship It **
 
 Shipyard is a Telegram‑controlled AI project factory. Send a text, voice note, or sketch photo to the bot — it turns the idea into a project plan, creates implementation tickets, gives every ticket its own sandbox/worktree, runs Codex agents, and shows everything on a live Kanban board.
 
